@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: client-deployment
+  namespace: adhoc
+  labels:
+    app: client
+spec:
+  replicas: 3
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app: client
+  template:
+    metadata:
+      labels:
+        app: client
+    spec:
+      serviceAccountName: endpoints-reader
+      containers:
+        - name: client
+          image: client:v1
+          imagePullPolicy: IfNotPresent
+
+
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: endpoints-reader
+subjects:
+  - kind: ServiceAccount
+    name: endpoints-reader
+    namespace: adhoc # the namespace that the ServiceAccount resides in
+roleRef:
+  kind: ClusterRole
+  name: endpoints-reader
+  apiGroup: rbac.authorization.k8s.io
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: endpoints-reader
+rules:
+  - apiGroups: [""]
+    resources: ["endpoints"]
+    verbs: ["get", "watch", "list"]
+
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: endpoints-reader
+  namespace: adhoc # the namespace to create the ServiceAccount
